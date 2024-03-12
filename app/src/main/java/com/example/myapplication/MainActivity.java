@@ -1,5 +1,9 @@
 package com.example.myapplication;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -28,19 +32,18 @@ public class MainActivity extends AppCompatActivity {
     private ArrayAdapter<Integer> arrayAdapter;
     private ActivityMainBinding binding;
 
-    public void updateData() {
-        Intent receivedIntent = getIntent();
-
-        if (receivedIntent != null) {
-            String data = receivedIntent.getStringExtra("newNumber");
-            Log.i("TAGg", "updateData: " + data);
-            String position = receivedIntent.getStringExtra("position");
-            Log.i("TAGg", "updateDataPo: " + position);
-            model.getList().set(Integer.parseInt(position), Integer.parseInt(data));
-            arrayList.set(Integer.parseInt(position), Integer.parseInt(data));
-            arrayAdapter.notifyDataSetChanged();
-        }
-    }
+//    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+//        super.onActivityResult(requestCode, resultCode, intent);
+//
+//        if (requestCode == RESULT_OK) {
+//// came back from SecondActivity
+//            String data = intent.getStringExtra("newNumber");
+//            String position = intent.getStringExtra("position");
+//            model.getList().set(Integer.parseInt(position), Integer.parseInt(data));
+//            arrayList.set(Integer.parseInt(position), Integer.parseInt(data));
+//            arrayAdapter.notifyDataSetChanged();
+//        }
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +98,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        ActivityResultLauncher<Intent> activityResultLauncher =
+                registerForActivityResult(
+                        new ActivityResultContracts.StartActivityForResult(),
+                        new ActivityResultCallback<ActivityResult>() {
+                            @Override
+                            public void onActivityResult(ActivityResult activityResult) {
+                                int requestCode = activityResult.getResultCode();
+                                Intent intent = activityResult.getData();
+
+                                if (requestCode == RESULT_OK) {
+                                    String data = intent.getStringExtra("newNumber");
+                                    String position = intent.getStringExtra("position");
+                                    model.getList().set(Integer.parseInt(position), Integer.parseInt(data));
+                                    arrayList.set(Integer.parseInt(position), Integer.parseInt(data));
+                                    arrayAdapter.notifyDataSetChanged();
+                                }
+                            }
+                        }
+                );
+
         binding.lvCount.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -102,7 +125,8 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("number", arrayList.get(position).toString());
                 intent.putExtra("position", "" + arrayList.indexOf(position));
 
-                startActivity(intent);
+                //startActivityForResult(intent, 0);
+                activityResultLauncher.launch(intent);
             }
         });
     }
